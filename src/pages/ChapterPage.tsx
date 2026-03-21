@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '@/context/GameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Stage, Problem } from '@/data/mockData';
@@ -7,9 +7,10 @@ import { ArrowLeft, Lock, CheckCircle2, Swords, Gift, ChevronRight, Circle } fro
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 
 export default function ChapterPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const game = useGame();
-  const chapter = game.chapters.find(c => c.id === 'ch1')!;
+  const chapter = game.chapters.find(c => c.id === id) || game.chapters[0];
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
 
   return (

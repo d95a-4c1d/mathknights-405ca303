@@ -74,11 +74,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const newEasy = s.easyCompleted + (isEasy ? 1 : 0);
       const newHard = s.hardCompleted + (isEasy ? 0 : 1);
 
-      // Update missions
+      // Update missions — match Chinese descriptions
       const updateMissions = (missions: Mission[]) =>
         missions.map(m => {
-          if (m.description.includes('easy') && isEasy) return { ...m, current: Math.min(m.current + 1, m.target) };
-          if (m.description.includes('hard') && !isEasy) return { ...m, current: Math.min(m.current + 1, m.target) };
+          const desc = m.description;
+          // Simple problems
+          if (isEasy && (desc.includes('简单题') || desc.includes('错题') || desc.includes('公式')))
+            return { ...m, current: Math.min(m.current + 1, m.target) };
+          // Hard problems
+          if (!isEasy && desc.includes('困难题'))
+            return { ...m, current: Math.min(m.current + 1, m.target) };
+          // Generic "complete" missions
+          if (desc.includes('完成') && !desc.includes('简单') && !desc.includes('困难'))
+            return { ...m, current: Math.min(m.current + 1, m.target) };
           return m;
         });
 

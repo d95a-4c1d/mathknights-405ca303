@@ -1,25 +1,106 @@
 """
-Challenge submission endpoint.
-Receives a problem ID + answer, evaluates it, returns result + rewards.
+Challenge submission endpoint — LLM grading via DeepSeek.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
 from app.models.schemas import ChallengeSubmit, ChallengeResult, RewardItem
+from app.models.orm_models import Problem as DBProblem, User as DBUser, UserProgress
+from app.services.deepseek import grade_answer, evaluate_rewards
 
 router = APIRouter()
 
 
 @router.post("/", response_model=ChallengeResult)
-async def submit_challenge(body: ChallengeSubmit):
+async def submit_challenge(body: ChallengeSubmit, db: AsyncSession = Depends(get_db)):
     """
-    TODO: Integrate with LLM for real answer evaluation.
-    For now, always returns correct with a mock reward.
+    Grade student answer using DeepSeek LLM.
     """
-    # 1. Look up the problem by body.problem_id
-    # 2. Send body.answer to LLM for evaluation
-    # 3. Determine rewards based on difficulty + correctness
+    # 1. Look up the problem
+    result = await db.execute(select(DBProblem).where(DBProblem.id == body.problem_id))
+    problem = result.scalar_one_or_none()
+
+    if not problem:
+        return ChallengeResult(
+            correct=False,
+            rewards=[],
+            feedback="未找到该题目，请重试。",
+        )
+
+    # 2. Grade with LLM
+    grade = await grade_answer(
+        question=problem.question,
+        student_answer=body.answer,
+        reference=problem.reference_answer or "",
+    )
+
+    # 3. Determine rewards
+    rewards_raw = await evaluate_rewards(
+        question=problem.question,
+        difficulty=problem.difficulty,
+        score=grade["score"],
+    )
+    rewards = [RewardItem(**r) for r in rewards_raw]
+
+    # 4. First clear bonus
+    if grade["correct"] and problem.first_clear_bonus and body.user_id:
+        progress_result = await db.execute(
+            select(UserProgress).where(
+                UserProgress.user_id == body.user_id,
+                UserProgress.problem_id == body.problem_id,
+                UserProgress.completed == True,
+            )
+        )
+        already_cleared = progress_result.first() is not None
+        if not already_cleared:
+            for bonus in problem.first_clear_bonus:
+                rewards.append(RewardItem(**bonus))
+
+    # 5. Update user progress
+    if body.user_id:
+        progress_result = await db.execute(
+            select(UserProgress).where(
+                UserProgress.user_id == body.user_id,
+                UserProgress.problem_id == body.problem_id,
+            )
+        )
+        user_progress = progress_result.scalar_one_or_none()
+        if not user_progress:
+            user_progress = UserProgress(
+                user_id=body.user_id,
+                problem_id=body.problem_id,
+            )
+            db.add(user_progress)
+
+        user_progress.attempts = (user_progress.attempts or 0) + 1
+        if grade["score"] > (user_progress.best_score or 0):
+            user_progress.best_score = grade["score"]
+        if grade["correct"]:
+            user_progress.completed = True
+
+            # Update user inventory + counters
+            user_result = await db.execute(select(DBUser).where(DBUser.id == body.user_id))
+            user = user_result.scalar_one_or_none()
+            if user:
+                for r in rewards:
+                    if r.type == "basic_exp":
+                        user.basic_exp += r.quantity
+                    elif r.type == "advanced_exp":
+                        user.advanced_exp += r.quantity
+                    elif r.type == "promotion_ticket":
+                        user.promotion_ticket += r.quantity
+                if problem.difficulty == "Easy":
+                    user.easy_completed += 1
+                else:
+                    user.hard_completed += 1
+
+        await db.commit()
+
     return ChallengeResult(
-        correct=True,
-        rewards=[RewardItem(type="basic_exp", name="基础经验卡", quantity=1)],
-        feedback="回答正确！",
+        correct=grade["correct"],
+        rewards=rewards,
+        feedback=grade["feedback"],
     )

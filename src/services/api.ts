@@ -1,12 +1,9 @@
 /**
  * API service layer — bridges frontend to FastAPI backend.
- *
- * All functions currently return stub/mock data.
- * To connect the real backend, replace stubs with `request<T>(...)` calls
- * and set VITE_API_URL in .env (default: http://localhost:8000/api).
+ * All endpoints now call the real FastAPI backend.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -73,93 +70,110 @@ export interface ChallengeResult {
 
 // ─── Helper ──────────────────────────────────────────────────────────
 
+// Simple user ID — in production, this would come from auth
+const USER_ID = 'default';
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+  const url = `${API_BASE}${path}`;
+  const headers: Record<string, string> = {
+    ...(options?.headers as Record<string, string>),
+  };
+  // Only set Content-Type for non-FormData requests
+  if (!(options?.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const res = await fetch(url, {
     ...options,
+    headers,
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.statusText);
+    throw new Error(`API error ${res.status}: ${err}`);
+  }
   return res.json();
 }
 
-// ─── Stub data (mirrors mockData.ts) ─────────────────────────────────
-
-import { CHAPTERS, DAILY_MISSIONS, WEEKLY_MISSIONS, COMPETENCIES } from '@/data/mockData';
+// snake_case → camelCase converter for API responses
+function toCamel(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(toCamel);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
+        k.replace(/_([a-z])/g, (_, c) => c.toUpperCase()),
+        toCamel(v),
+      ])
+    );
+  }
+  return obj;
+}
 
 // ─── Chapter endpoints ───────────────────────────────────────────────
 
 export async function fetchChapters(): Promise<Chapter[]> {
-  // TODO: Replace with → return request<Chapter[]>('/chapters');
-  return JSON.parse(JSON.stringify(CHAPTERS));
+  const data = await request<unknown[]>('/chapters/');
+  return toCamel(data) as Chapter[];
 }
 
 export async function fetchChapter(id: string): Promise<Chapter> {
-  // TODO: Replace with → return request<Chapter>(`/chapters/${id}`);
-  const ch = CHAPTERS.find(c => c.id === id);
-  if (!ch) throw new Error(`Chapter ${id} not found`);
-  return JSON.parse(JSON.stringify(ch));
+  const data = await request<unknown>(`/chapters/${id}`);
+  return toCamel(data) as Chapter;
 }
 
 // ─── Challenge endpoint ──────────────────────────────────────────────
 
-export async function submitChallenge(_problemId: string, _answer: string): Promise<ChallengeResult> {
-  // TODO: Replace with → return request<ChallengeResult>('/challenge', {
-  //   method: 'POST', body: JSON.stringify({ problemId: _problemId, answer: _answer }),
-  // });
-  return {
-    correct: true,
-    rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }],
-    feedback: '回答正确！',
-  };
+export async function submitChallenge(problemId: string, answer: string): Promise<ChallengeResult> {
+  const data = await request<unknown>('/challenge/', {
+    method: 'POST',
+    body: JSON.stringify({ problem_id: problemId, answer, user_id: USER_ID }),
+  });
+  return toCamel(data) as ChallengeResult;
 }
 
 // ─── Mission endpoints ───────────────────────────────────────────────
 
 export async function fetchMissions(type: 'daily' | 'weekly'): Promise<Mission[]> {
-  // TODO: Replace with → return request<Mission[]>(`/missions?type=${type}`);
-  const data = type === 'daily' ? DAILY_MISSIONS : WEEKLY_MISSIONS;
-  return JSON.parse(JSON.stringify(data));
+  const data = await request<unknown[]>(`/missions/?type=${type}&user_id=${USER_ID}`);
+  return toCamel(data) as Mission[];
 }
 
 export async function claimMission(id: string): Promise<RewardItem[]> {
-  // TODO: Replace with → return request<RewardItem[]>(`/missions/${id}/claim`, { method: 'POST' });
-  return [{ type: 'basic_exp', name: '基础经验卡', quantity: 2 }];
+  const data = await request<unknown[]>(`/missions/${id}/claim?user_id=${USER_ID}`, {
+    method: 'POST',
+  });
+  return toCamel(data) as RewardItem[];
 }
 
 // ─── User endpoints ──────────────────────────────────────────────────
 
 export async function fetchUserProfile(): Promise<UserProfile> {
-  // TODO: Replace with → return request<UserProfile>('/user/profile');
-  return {
-    level: 26,
-    exp: 4038,
-    elite: 0,
-    inventory: { basic_exp: 213, advanced_exp: 1056, promotion_ticket: 17 },
-    competencies: COMPETENCIES,
-  };
+  const data = await request<unknown>(`/user/profile?user_id=${USER_ID}`);
+  return toCamel(data) as UserProfile;
 }
 
-export async function useExpCards(_type: string, _count: number): Promise<UserProfile> {
-  // TODO: Replace with → return request<UserProfile>('/user/exp', { method: 'POST', body: JSON.stringify({ type, count }) });
-  return fetchUserProfile();
+export async function useExpCards(type: string, count: number): Promise<UserProfile> {
+  const data = await request<unknown>(`/user/exp?user_id=${USER_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ type, count }),
+  });
+  return toCamel(data) as UserProfile;
 }
 
 export async function promote(): Promise<UserProfile> {
-  // TODO: Replace with → return request<UserProfile>('/user/promote', { method: 'POST' });
-  return fetchUserProfile();
+  const data = await request<unknown>(`/user/promote?user_id=${USER_ID}`, {
+    method: 'POST',
+  });
+  return toCamel(data) as UserProfile;
 }
 
 // ─── OCR endpoint ────────────────────────────────────────────────────
 
-export async function ocrAnalyze(_imageFile: File): Promise<Problem> {
-  // TODO: Replace with real multipart upload:
-  // const form = new FormData();
-  // form.append('image', _imageFile);
-  // return request<Problem>('/ocr/analyze', { method: 'POST', body: form, headers: {} });
-  return {
-    id: 'ocr-1',
-    difficulty: 'Easy',
-    question: '判断 f(x)=ln(x+√(1+x²)) 的奇偶性。',
-    rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }],
-  };
+export async function ocrAnalyze(imageFile: File): Promise<Problem> {
+  const form = new FormData();
+  form.append('image', imageFile);
+  const data = await request<unknown>('/ocr/analyze', {
+    method: 'POST',
+    body: form,
+    headers: {}, // let browser set Content-Type for FormData
+  });
+  return toCamel(data) as Problem;
 }

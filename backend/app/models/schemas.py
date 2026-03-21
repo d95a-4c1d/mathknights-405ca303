@@ -82,6 +82,7 @@ class UserProfile(BaseModel):
 class ChallengeSubmit(BaseModel):
     problem_id: str
     answer: str
+    user_id: Optional[str] = "default"
 
 
 class ChallengeResult(BaseModel):

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import type { Problem } from '@/data/mockData';
 import { ArrowLeft, Upload, Send, Loader2, Swords, Gift, CheckCircle2 } from 'lucide-react';
 import { SectionHeader, SerialTag } from '@/components/Decorative';
+import { submitChallenge } from '@/services/api';
 
 export default function Challenge() {
   const location = useLocation();
@@ -17,21 +18,36 @@ export default function Challenge() {
 
   if (!problem) { navigate('/study'); return null; }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!answer.trim()) return;
     setSubmitting(true);
-    // TODO: Replace with real API call to FastAPI backend
-    // import { submitChallenge } from '@/services/api';
-    // const result = await submitChallenge(problem.id, answer);
-    setTimeout(() => {
+    try {
+      const result = await submitChallenge(problem.id, answer);
+      if (result.correct) {
+        const rewards = game.completeChallenge(problem);
+        navigate('/result', { state: { problem, stageName, rewards, isCustom, feedback: result.feedback } });
+      } else {
+        // Show feedback but don't navigate to result for wrong answers
+        navigate('/result', { state: { problem, stageName, rewards: [], isCustom, feedback: result.feedback, failed: true } });
+      }
+    } catch (err) {
+      console.error('Submit failed:', err);
+      // Fallback: complete locally
       const rewards = game.completeChallenge(problem);
-      navigate('/result', { state: { problem, stageName, rewards, isCustom } });
-    }, 1500);
+      navigate('/result', { state: { problem, stageName, rewards, isCustom, feedback: '网络错误，已本地记录' } });
+    }
   };
 
   const handleFileUpload = () => {
-    // TODO: Wire to real OCR endpoint via api.ts
-    setUploadedFile(new File(['mock'], 'answer.jpg', { type: 'image/jpeg' }));
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      if (input.files?.[0]) {
+        setUploadedFile(input.files[0]);
+      }
+    };
+    input.click();
   };
 
   return (

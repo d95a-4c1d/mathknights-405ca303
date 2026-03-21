@@ -1,17 +1,31 @@
 """
-MathKnights FastAPI Backend — MVP Scaffold
+MathKnights FastAPI Backend — with SQLite + DeepSeek LLM integration.
 Run: uvicorn app.main:app --reload --port 8000
 """
 
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database import init_db
 from app.routers import chapters, challenges, missions, user, ocr
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
 
 app = FastAPI(
     title="MathKnights API",
     description="Backend for the MathKnights math-learning gamification app",
-    version="0.1.0",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 
 # CORS — allow Vite dev server and production origins
