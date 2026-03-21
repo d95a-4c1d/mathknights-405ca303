@@ -37,7 +37,7 @@ export default function Inventory() {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-5">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 md:px-6 py-5">
         <div className="max-w-xl mx-auto space-y-3">
           <SectionHeader title="物品列表" serial="INV//ALL" className="mb-2" />
           {items.map((item, i) => (

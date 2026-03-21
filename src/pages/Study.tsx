@@ -60,7 +60,7 @@ export default function Study() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-hidden px-4 md:px-6 py-4">
+      <div className="relative z-10 flex-1 overflow-hidden px-4 md:px-6 py-4">
         <AnimatePresence mode="wait">
           {tab === 'mainline' ? (
             <motion.div key="mainline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

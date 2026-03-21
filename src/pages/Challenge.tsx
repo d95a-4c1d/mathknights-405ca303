@@ -49,7 +49,7 @@ export default function Challenge() {
         <span className="text-white/40 text-xs ml-2 truncate max-w-[40vw]">{stageName}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col items-center">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 py-5 flex flex-col items-center">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           className="card-panel-lg p-5 md:p-8 w-full max-w-2xl"
         >

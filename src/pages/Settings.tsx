@@ -23,7 +23,7 @@ export default function Settings() {
         <SerialTag text="CFG//SYS" className="ml-3 text-white/30" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-5">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 md:px-6 py-5">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="max-w-md mx-auto space-y-4"
         >

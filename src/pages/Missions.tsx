@@ -66,7 +66,7 @@ export default function Missions() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-3">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 md:px-6 py-3">
         <div className="grid gap-2 max-w-3xl">
           {missions.map((m, i) => {
             const done = m.current >= m.target;
