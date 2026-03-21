@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { CHAPTERS, DAILY_MISSIONS, WEEKLY_MISSIONS, expToNextLevel, type Chapter, type Mission, type RewardItem, type Problem } from '@/data/mockData';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { CHAPTERS, DAILY_MISSIONS, WEEKLY_MISSIONS, expToNextLevel, COMPETENCIES } from '@/data/mockData';
+import type { Chapter, Mission, RewardItem, Problem } from '@/data/mockData';
+import * as api from '@/services/api';
 
 interface Inventory {
   basic_exp: number;
@@ -19,6 +21,7 @@ interface GameState {
   settings: { sound: boolean; animation: boolean };
   easyCompleted: number;
   hardCompleted: number;
+  loading: boolean;
 }
 
 interface GameContextType extends GameState {
@@ -28,7 +31,11 @@ interface GameContextType extends GameState {
   promote: () => boolean;
   claimMission: (id: string, type: 'daily' | 'weekly') => RewardItem[] | null;
   toggleSetting: (key: 'sound' | 'animation') => void;
+  refreshChapters: () => Promise<void>;
+  refreshMissions: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   maxLevel: number;
+  competencies: { name: string; fullName: string; value: number }[];
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -42,9 +49,9 @@ export function useGame() {
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GameState>({
     elite: 0,
-    level: 26,
-    exp: 4038,
-    inventory: { basic_exp: 213, advanced_exp: 1056, promotion_ticket: 17 },
+    level: 1,
+    exp: 0,
+    inventory: { basic_exp: 0, advanced_exp: 0, promotion_ticket: 0 },
     chapters: JSON.parse(JSON.stringify(CHAPTERS)),
     dailyMissions: JSON.parse(JSON.stringify(DAILY_MISSIONS)),
     weeklyMissions: JSON.parse(JSON.stringify(WEEKLY_MISSIONS)),
@@ -52,9 +59,62 @@ export function GameProvider({ children }: { children: ReactNode }) {
     settings: { sound: true, animation: true },
     easyCompleted: 0,
     hardCompleted: 0,
+    loading: true,
   });
 
+  const [competencies, setCompetencies] = useState(COMPETENCIES);
+
   const maxLevel = state.elite === 0 ? 50 : 70;
+
+  // Load data from backend on mount
+  const refreshProfile = useCallback(async () => {
+    try {
+      const profile = await api.fetchUserProfile();
+      setState(s => ({
+        ...s,
+        level: profile.level,
+        exp: profile.exp,
+        elite: profile.elite,
+        inventory: profile.inventory,
+        loading: false,
+      }));
+      setCompetencies(profile.competencies.map(c => ({
+        name: c.name,
+        fullName: c.fullName,
+        value: c.value,
+      })));
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      setState(s => ({ ...s, loading: false }));
+    }
+  }, []);
+
+  const refreshChapters = useCallback(async () => {
+    try {
+      const chapters = await api.fetchChapters();
+      setState(s => ({ ...s, chapters }));
+    } catch (err) {
+      console.error('Failed to load chapters:', err);
+    }
+  }, []);
+
+  const refreshMissions = useCallback(async () => {
+    try {
+      const [daily, weekly] = await Promise.all([
+        api.fetchMissions('daily'),
+        api.fetchMissions('weekly'),
+      ]);
+      setState(s => ({ ...s, dailyMissions: daily, weeklyMissions: weekly }));
+    } catch (err) {
+      console.error('Failed to load missions:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshProfile();
+    refreshChapters();
+    refreshMissions();
+  }, [refreshProfile, refreshChapters, refreshMissions]);
 
   const setCurrentChapter = useCallback((id: string | null) => {
     setState(s => ({ ...s, currentChapter: id }));
@@ -78,19 +138,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const updateMissions = (missions: Mission[]) =>
         missions.map(m => {
           const desc = m.description;
-          // Simple problems
           if (isEasy && (desc.includes('简单题') || desc.includes('错题') || desc.includes('公式')))
             return { ...m, current: Math.min(m.current + 1, m.target) };
-          // Hard problems
           if (!isEasy && desc.includes('困难题'))
             return { ...m, current: Math.min(m.current + 1, m.target) };
-          // Generic "complete" missions
-          if (desc.includes('完成') && !desc.includes('简单') && !desc.includes('困难'))
+          if (desc.includes('完成') && !desc.includes('简单') && !desc.includes('困难') && !desc.includes('错题') && !desc.includes('公式') && !desc.includes('思维导图'))
             return { ...m, current: Math.min(m.current + 1, m.target) };
           return m;
         });
 
-      // Mark stage cleared and unlock next
+      // Mark stage cleared and unlock next (DAG)
       const chapters = s.chapters.map(ch => {
         const stageIdx = ch.stages.findIndex(st => st.problems.some(p => p.id === problem.id));
         if (stageIdx === -1) return ch;
@@ -114,63 +171,50 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const useExpCard = useCallback((type: 'basic_exp' | 'advanced_exp', count: number) => {
-    setState(s => {
-      const available = type === 'basic_exp' ? s.inventory.basic_exp : s.inventory.advanced_exp;
-      const use = Math.min(count, available);
-      if (use <= 0) return s;
-      const expGain = type === 'basic_exp' ? use * 100 : use * 500;
-      let newExp = s.exp + expGain;
-      let newLevel = s.level;
-      const ml = s.elite === 0 ? 50 : 70;
-      while (newLevel < ml && newExp >= expToNextLevel(newLevel)) {
-        newExp -= expToNextLevel(newLevel);
-        newLevel++;
-      }
-      if (newLevel >= ml) { newLevel = ml; }
-      const inv = { ...s.inventory };
-      if (type === 'basic_exp') inv.basic_exp -= use;
-      else inv.advanced_exp -= use;
-      return { ...s, exp: newExp, level: newLevel, inventory: inv };
-    });
+    // Call backend
+    api.useExpCards(type, count).then(profile => {
+      setState(s => ({
+        ...s,
+        level: profile.level,
+        exp: profile.exp,
+        inventory: profile.inventory,
+      }));
+    }).catch(err => console.error('useExpCard failed:', err));
   }, []);
 
   const promote = useCallback((): boolean => {
     let success = false;
-    setState(s => {
-      if (s.elite >= 1) return s;
-      if (s.level < 50) return s;
-      if (s.inventory.promotion_ticket < 20) return s;
+    api.promote().then(profile => {
+      setState(s => ({
+        ...s,
+        elite: profile.elite,
+        level: profile.level,
+        inventory: profile.inventory,
+      }));
       success = true;
-      return {
-        ...s, elite: 1, level: 50,
-        inventory: { ...s.inventory, promotion_ticket: s.inventory.promotion_ticket - 20 },
-      };
-    });
+    }).catch(err => console.error('promote failed:', err));
     return success;
   }, []);
 
   const claimMission = useCallback((id: string, type: 'daily' | 'weekly'): RewardItem[] | null => {
     let rewards: RewardItem[] | null = null;
-    setState(s => {
-      const key = type === 'daily' ? 'dailyMissions' : 'weeklyMissions';
-      const missions = s[key].map(m => {
-        if (m.id === id && m.current >= m.target && !m.claimed) {
-          rewards = m.rewards;
-          return { ...m, claimed: true };
-        }
-        return m;
-      });
-      if (!rewards) return s;
-      const inv = { ...s.inventory };
-      rewards.forEach((r: RewardItem) => {
-        if (r.type === 'basic_exp') inv.basic_exp += r.quantity;
-        if (r.type === 'advanced_exp') inv.advanced_exp += r.quantity;
-        if (r.type === 'promotion_ticket') inv.promotion_ticket += r.quantity;
-      });
-      return { ...s, [key]: missions, inventory: inv };
-    });
+    api.claimMission(id).then(r => {
+      if (r.length > 0) {
+        rewards = r;
+        // Refresh profile to update inventory
+        refreshProfile();
+        // Update mission claimed status
+        setState(s => {
+          const key = type === 'daily' ? 'dailyMissions' : 'weeklyMissions';
+          const missions = s[key].map(m =>
+            m.id === id ? { ...m, claimed: true } : m
+          );
+          return { ...s, [key]: missions };
+        });
+      }
+    }).catch(err => console.error('claimMission failed:', err));
     return rewards;
-  }, []);
+  }, [refreshProfile]);
 
   const toggleSetting = useCallback((key: 'sound' | 'animation') => {
     setState(s => ({ ...s, settings: { ...s.settings, [key]: !s.settings[key] } }));
@@ -178,8 +222,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   return (
     <GameContext.Provider value={{
-      ...state, maxLevel, setCurrentChapter, completeChallenge,
+      ...state, maxLevel, competencies, setCurrentChapter, completeChallenge,
       useExpCard, promote, claimMission, toggleSetting,
+      refreshChapters, refreshMissions, refreshProfile,
     }}>
       {children}
     </GameContext.Provider>

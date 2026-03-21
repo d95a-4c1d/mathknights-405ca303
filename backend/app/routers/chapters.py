@@ -2,14 +2,18 @@
 Chapter & Stage endpoints — backed by SQLite + seed data.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.orm_models import Chapter as DBChapter, Stage as DBStage, Problem as DBProblem
+from app.models.orm_models import (
+    Chapter as DBChapter, Stage as DBStage, Problem as DBProblem,
+    UserProgress, User as DBUser,
+)
 from app.models.schemas import Chapter, Stage
+from app.routers.user import ensure_user
 
 router = APIRouter()
 
@@ -52,7 +56,7 @@ SEED_CHAPTERS = [
         ],
     },
     {
-        "id": "ch2", "number": 2, "title": "导数与微分", "subtitle": "变化率", "available": False,
+        "id": "ch2", "number": 2, "title": "导数与微分", "subtitle": "变化率", "available": True,
         "stages": [
             {"id": "s2-1", "name": "导数的定义", "topic": "导数概念", "order": 0,
              "problems": [
@@ -81,7 +85,7 @@ SEED_CHAPTERS = [
         ],
     },
     {
-        "id": "ch3", "number": 3, "title": "导数的应用", "subtitle": "优化与分析", "available": False,
+        "id": "ch3", "number": 3, "title": "导数的应用", "subtitle": "优化与分析", "available": True,
         "stages": [
             {"id": "s3-1", "name": "极值与最值", "topic": "极值判定", "order": 0,
              "problems": [
@@ -98,7 +102,7 @@ SEED_CHAPTERS = [
         ],
     },
     {
-        "id": "ch4", "number": 4, "title": "不定积分", "subtitle": "原函数", "available": False,
+        "id": "ch4", "number": 4, "title": "不定积分", "subtitle": "原函数", "available": True,
         "stages": [
             {"id": "s4-1", "name": "基本积分公式", "topic": "直接积分", "order": 0,
              "problems": [
@@ -115,7 +119,7 @@ SEED_CHAPTERS = [
         ],
     },
     {
-        "id": "ch5", "number": 5, "title": "定积分", "subtitle": "曲线下面积", "available": False,
+        "id": "ch5", "number": 5, "title": "定积分", "subtitle": "曲线下面积", "available": True,
         "stages": [
             {"id": "s5-1", "name": "牛顿-莱布尼茨公式", "topic": "定积分计算", "order": 0,
              "problems": [
@@ -167,18 +171,28 @@ async def seed_data(db: AsyncSession):
 
 
 @router.get("/", response_model=list[Chapter])
-async def list_chapters(db: AsyncSession = Depends(get_db)):
+async def list_chapters(
+    user_id: str = Query("default"),
+    db: AsyncSession = Depends(get_db),
+):
     await seed_data(db)
+    await ensure_user(db, user_id)
     result = await db.execute(
         select(DBChapter).options(selectinload(DBChapter.stages).selectinload(DBStage.problems))
+        .order_by(DBChapter.number)
     )
     chapters = result.scalars().all()
-    return [_chapter_to_schema(ch) for ch in chapters]
+    return [await _chapter_to_schema(ch, user_id, db) for ch in chapters]
 
 
 @router.get("/{chapter_id}", response_model=Chapter)
-async def get_chapter(chapter_id: str, db: AsyncSession = Depends(get_db)):
+async def get_chapter(
+    chapter_id: str,
+    user_id: str = Query("default"),
+    db: AsyncSession = Depends(get_db),
+):
     await seed_data(db)
+    await ensure_user(db, user_id)
     result = await db.execute(
         select(DBChapter)
         .options(selectinload(DBChapter.stages).selectinload(DBStage.problems))
@@ -187,34 +201,70 @@ async def get_chapter(chapter_id: str, db: AsyncSession = Depends(get_db)):
     ch = result.scalar_one_or_none()
     if not ch:
         raise HTTPException(status_code=404, detail="Chapter not found")
-    return _chapter_to_schema(ch)
+    return await _chapter_to_schema(ch, user_id, db)
 
 
-def _chapter_to_schema(ch: DBChapter) -> dict:
+async def _chapter_to_schema(ch: DBChapter, user_id: str, db: AsyncSession) -> dict:
+    """Build chapter schema with user progress awareness (DAG unlock logic)."""
+    # Load all user progress for this chapter's problems
+    problem_ids = [p.id for st in ch.stages for p in st.problems]
+    progress_map: dict[str, UserProgress] = {}
+    if problem_ids:
+        result = await db.execute(
+            select(UserProgress).where(
+                UserProgress.user_id == user_id,
+                UserProgress.problem_id.in_(problem_ids),
+            )
+        )
+        for p in result.scalars().all():
+            progress_map[p.problem_id] = p
+
+    # Determine which stages are unlocked (DAG: previous stage cleared → next unlocked)
+    # Each chapter is independent - first stage of each chapter is always unlocked
+    stages_data = []
+
+    for st in ch.stages:
+        stage_cleared = False
+        for p in st.problems:
+            prog = progress_map.get(p.id)
+            if prog and prog.completed:
+                stage_cleared = True
+                break
+
+        stages_data.append({
+            "id": st.id,
+            "name": st.name,
+            "topic": st.topic,
+            "unlocked": True,  # will be set below based on DAG
+            "cleared": stage_cleared,
+            "problems": [
+                {
+                    "id": p.id,
+                    "difficulty": p.difficulty,
+                    "question": p.question,
+                    "rewards": p.rewards or [],
+                    "first_clear_bonus": p.first_clear_bonus,
+                    "completed": bool(progress_map.get(p.id) and progress_map[p.id].completed),
+                    "best_score": float(progress_map.get(p.id).best_score or 0) if progress_map.get(p.id) else 0,
+                }
+                for p in st.problems
+            ],
+        })
+
+    # Apply DAG unlock: first stage always unlocked, subsequent stages unlock when previous is cleared
+    for i in range(len(stages_data)):
+        if i == 0:
+            stages_data[i]["unlocked"] = True
+        else:
+            stages_data[i]["unlocked"] = stages_data[i - 1]["cleared"]
+
+    # Determine chapter availability (ch1 always available; others require previous chapter's last stage cleared)
+    # For now, keep the seed availability flag
     return {
         "id": ch.id,
         "number": ch.number,
         "title": ch.title,
         "subtitle": ch.subtitle,
         "available": ch.available,
-        "stages": [
-            {
-                "id": st.id,
-                "name": st.name,
-                "topic": st.topic,
-                "unlocked": True,  # will be overridden by user progress
-                "cleared": False,   # will be overridden by user progress
-                "problems": [
-                    {
-                        "id": p.id,
-                        "difficulty": p.difficulty,
-                        "question": p.question,
-                        "rewards": p.rewards or [],
-                        "first_clear_bonus": p.first_clear_bonus,
-                    }
-                    for p in st.problems
-                ],
-            }
-            for st in ch.stages
-        ],
+        "stages": stages_data,
     }

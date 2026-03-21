@@ -1,5 +1,5 @@
 import { useGame } from '@/context/GameContext';
-import { COMPETENCIES, expToNextLevel } from '@/data/mockData';
+import { expToNextLevel } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="card-panel flex-1 p-4 min-h-[240px] md:min-h-0 relative overflow-hidden">
             <SectionHeader title="能力分析" serial="COMP.ANALYSIS//04" className="mb-2" />
             <ResponsiveContainer width="100%" height={200}>
-              <RadarChart data={COMPETENCIES} cx="50%" cy="50%" outerRadius="68%">
+              <RadarChart data={game.competencies} cx="50%" cy="50%" outerRadius="68%">
                 <PolarGrid stroke="hsl(220 14% 88%)" />
                 <PolarAngleAxis dataKey="name" tick={{ fill: 'hsl(220 10% 46%)', fontSize: 10, fontFamily: 'Noto Sans SC' }} />
                 <Radar name="分数" dataKey="value" stroke="hsl(25 95% 53%)" fill="hsl(25 95% 53%)" fillOpacity={0.15} strokeWidth={2} />

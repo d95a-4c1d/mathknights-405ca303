@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/context/GameContext';
 import { motion } from 'framer-motion';
-import { expToNextLevel, COMPETENCIES } from '@/data/mockData';
+import { expToNextLevel } from '@/data/mockData';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, TrendingUp, Zap, ChevronUp, ChevronDown, Sparkles, ArrowUpCircle, CheckCircle2 } from 'lucide-react';
 import { SectionHeader, Barcode, SerialTag } from '@/components/Decorative';
@@ -129,7 +129,7 @@ export default function Growth() {
           <div className="card-panel flex-1 p-4 min-h-[260px] md:min-h-0 relative overflow-hidden">
             <SectionHeader title="能力分析" serial="COMP//04" className="mb-2" />
             <ResponsiveContainer width="100%" height={220}>
-              <RadarChart data={COMPETENCIES} cx="50%" cy="50%" outerRadius="68%">
+              <RadarChart data={game.competencies} cx="50%" cy="50%" outerRadius="68%">
                 <PolarGrid stroke="hsl(220 14% 88%)" />
                 <PolarAngleAxis dataKey="name" tick={{ fill: 'hsl(220 10% 46%)', fontSize: 10, fontFamily: 'Noto Sans SC' }} />
                 <Radar name="分数" dataKey="value" stroke="hsl(25 95% 53%)" fill="hsl(25 95% 53%)" fillOpacity={0.15} strokeWidth={2} />

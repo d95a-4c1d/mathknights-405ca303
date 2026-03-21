@@ -19,6 +19,8 @@ export interface Problem {
   question: string;
   rewards: RewardItem[];
   firstClearBonus?: RewardItem[];
+  completed?: boolean;
+  bestScore?: number;
 }
 
 export interface Stage {
@@ -110,12 +112,12 @@ function toCamel(obj: unknown): unknown {
 // ─── Chapter endpoints ───────────────────────────────────────────────
 
 export async function fetchChapters(): Promise<Chapter[]> {
-  const data = await request<unknown[]>('/chapters/');
+  const data = await request<unknown[]>(`/chapters/?user_id=${USER_ID}`);
   return toCamel(data) as Chapter[];
 }
 
 export async function fetchChapter(id: string): Promise<Chapter> {
-  const data = await request<unknown>(`/chapters/${id}`);
+  const data = await request<unknown>(`/chapters/${id}?user_id=${USER_ID}`);
   return toCamel(data) as Chapter;
 }
 

@@ -18,6 +18,13 @@ from app.routers import chapters, challenges, missions, user, ocr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Seed data on startup
+    from app.database import async_session
+    from app.routers.chapters import seed_data
+    from app.routers.missions import ensure_missions
+    async with async_session() as db:
+        await seed_data(db)
+        await ensure_missions(db, "default")
     yield
 
 

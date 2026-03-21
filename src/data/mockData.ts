@@ -13,6 +13,8 @@ export interface Problem {
   question: string;
   rewards: RewardItem[];
   firstClearBonus?: RewardItem[];
+  completed?: boolean;
+  bestScore?: number;
 }
 
 export interface RewardItem {

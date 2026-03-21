@@ -24,6 +24,8 @@ class Problem(BaseModel):
     question: str
     rewards: list[RewardItem]
     first_clear_bonus: Optional[list[RewardItem]] = None
+    completed: Optional[bool] = None
+    best_score: Optional[float] = None
 
 
 class Stage(BaseModel):
