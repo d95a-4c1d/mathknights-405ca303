@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 14% 96%;
+    --foreground: 220 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 14%;
+
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 14% 90%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 220 14% 92%;
+    --accent-foreground: 220 20% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 87%;
+    --input: 220 13% 91%;
+    --ring: 25 95% 53%;
+
+    --radius: 0.75rem;
+
+    --surface-elevated: 0 0% 100%;
+    --surface-overlay: 220 14% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    overflow: hidden;
+    @media (max-width: 768px) {
+      overflow: auto;
+    }
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(220 14% 93%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(220 10% 76%);
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+  }
+  .font-body {
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .font-mono-tech {
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Card system — white cards with heavy shadows */
+  .card-panel {
+    background: hsl(0 0% 100%);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 1px 2px hsl(220 20% 14% / 0.04),
+      0 4px 12px hsl(220 20% 14% / 0.06),
+      0 12px 32px hsl(220 20% 14% / 0.08);
+  }
+  .card-panel-sm {
+    background: hsl(0 0% 100%);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 1px 2px hsl(220 20% 14% / 0.04),
+      0 4px 8px hsl(220 20% 14% / 0.06);
+  }
+  .card-panel-lg {
+    background: hsl(0 0% 100%);
+    border-radius: 1rem;
+    box-shadow:
+      0 2px 4px hsl(220 20% 14% / 0.04),
+      0 8px 24px hsl(220 20% 14% / 0.08),
+      0 20px 48px hsl(220 20% 14% / 0.1);
+  }
+  .card-panel-dark {
+    background: hsl(220 20% 16%);
+    color: hsl(210 10% 92%);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 4px 16px hsl(220 20% 14% / 0.2),
+      0 12px 40px hsl(220 20% 14% / 0.15);
+  }
+  .card-inset {
+    background: hsl(220 14% 95%);
+    border-radius: 0.5rem;
+  }
+
+  /* Glass overlay */
+  .glass-panel {
+    background: hsl(0 0% 100% / 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 4px 12px hsl(220 20% 14% / 0.06),
+      0 12px 32px hsl(220 20% 14% / 0.08);
+  }
+  .glass-dark {
+    background: hsl(220 20% 14% / 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 0.75rem;
+    color: hsl(210 10% 92%);
+  }
+
+  /* Hover */
+  .card-hover {
+    transition: all 0.25s ease;
+  }
+  .card-hover:hover {
+    box-shadow:
+      0 4px 16px hsl(220 20% 14% / 0.08),
+      0 16px 40px hsl(220 20% 14% / 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Watermark text */
+  .watermark {
+    position: absolute;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    color: hsl(220 14% 88%);
+    pointer-events: none;
+    user-select: none;
+    line-height: 0.85;
+    letter-spacing: -0.02em;
+  }
+
+  /* Decorative serial/barcode */
+  .serial-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: hsl(220 10% 72%);
+    letter-spacing: 0.1em;
+  }
+  .barcode {
+    display: flex;
+    gap: 1px;
+    align-items: flex-end;
+    height: 16px;
+  }
+  .barcode span {
+    display: block;
+    width: 1px;
+    background: hsl(220 10% 78%);
+  }
+
+  /* Orange / blue colored icon blocks */
+  .icon-block-orange {
+    background: hsl(25 95% 53% / 0.1);
+    color: hsl(25 95% 53%);
+    border-radius: 0.625rem;
+  }
+  .icon-block-blue {
+    background: hsl(210 70% 50% / 0.1);
+    color: hsl(210 70% 50%);
+    border-radius: 0.625rem;
+  }
+  .icon-block-dark {
+    background: hsl(220 20% 16%);
+    color: hsl(0 0% 100%);
+    border-radius: 0.625rem;
+  }
+  .icon-block-muted {
+    background: hsl(220 14% 92%);
+    color: hsl(220 10% 46%);
+    border-radius: 0.625rem;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    background: hsl(25 95% 53%);
+    color: white;
+    border-radius: 0.625rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px hsl(25 95% 53% / 0.3);
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-dark {
+    background: hsl(220 20% 16%);
+    color: white;
+    border-radius: 0.625rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px hsl(220 20% 14% / 0.25);
+  }
+  .btn-dark:hover { opacity: 0.9; }
+  .btn-dark:active { transform: scale(0.97); }
+
+  .btn-ghost {
+    background: hsl(220 14% 92%);
+    color: hsl(220 20% 14%);
+    border-radius: 0.625rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { background: hsl(220 14% 88%); }
+  .btn-ghost:active { transform: scale(0.97); }
+}
