@@ -8,6 +8,7 @@ import { CheckCircle2, ArrowRight, TrendingUp, Package, Target, RotateCcw, XCirc
 import { SectionHeader } from '@/components/Decorative';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import type { CompetencyDelta } from '@/services/api';
+import { MathRenderer } from '@/components/MathRenderer';
 
 const COMP_NAMES: Record<keyof CompetencyDelta, string> = {
   compAbstract:    '数学抽象',
@@ -133,7 +134,7 @@ export default function Result() {
 
         <div className="card-inset p-3 rounded-xl mb-4">
           <div className="text-[10px] font-mono text-muted-foreground mb-1">题目</div>
-          <div className="text-sm">{problem.question}</div>
+          <MathRenderer content={problem.question} className="text-sm" />
         </div>
 
         {/* LLM feedback */}
@@ -143,7 +144,7 @@ export default function Result() {
               <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-[10px] font-mono text-muted-foreground">AI 评语</span>
             </div>
-            <div className="text-sm">{feedback}</div>
+            <MathRenderer content={feedback} className="text-sm" />
           </div>
         )}
 

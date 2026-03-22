@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, BookOpen, Upload, Camera, Sparkles, Lock, ChevronRight, MapPin, Loader2 } from 'lucide-react';
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 import { ocrAnalyze } from '@/services/api';
+import { MathRenderer } from '@/components/MathRenderer';
 
 const chapterEmojis: Record<string, string> = {
   ch1: '📐', ch2: '📈', ch3: '🔍', ch4: '∫', ch5: '📊',
@@ -197,7 +198,7 @@ export default function Study() {
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
                       <SerialTag text="OCR.RESULT//01" />
                     </div>
-                    <div className="text-sm mb-2 font-medium">{ocrResult.question}</div>
+                    <MathRenderer content={ocrResult.question} className="text-sm mb-2 font-medium" />
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                       <span className={`px-2 py-0.5 rounded-full font-medium ${
                         ocrResult.difficulty === 'Easy' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'

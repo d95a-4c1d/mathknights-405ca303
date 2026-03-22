@@ -5,6 +5,7 @@ import { ArrowLeft, BookX, Swords, RefreshCw, Loader2, Trophy } from 'lucide-rea
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 import { fetchWrongAnswers } from '@/services/api';
 import type { WrongAnswerItem } from '@/services/api';
+import { MathRenderer } from '@/components/MathRenderer';
 
 export default function WrongAnswers() {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ export default function WrongAnswers() {
                           }`}>{item.difficulty === 'Easy' ? '简单' : '困难'}</span>
                           <div className="flex-1 min-w-0">
                             <SerialTag text={item.stageName} className="mb-1" />
-                            <div className="text-sm leading-snug mt-1">{item.question}</div>
+                            <MathRenderer content={item.question} className="text-sm leading-snug mt-1" />
                             <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
                               <span>尝试 {item.attempts} 次</span>
                               <span>最高得分 {Math.round(item.bestScore * 100)}%</span>

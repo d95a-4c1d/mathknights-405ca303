@@ -6,6 +6,7 @@ import type { Stage, Problem } from '@/data/mockData';
 import { ArrowLeft, Lock, CheckCircle2, Swords, Gift, ChevronRight, Circle, BookOpen, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 import { generateChallenge } from '@/services/api';
+import { MathRenderer } from '@/components/MathRenderer';
 
 export default function ChapterPage() {
   const { id } = useParams<{ id: string }>();
@@ -127,9 +128,7 @@ export default function ChapterPage() {
                                     className="overflow-hidden"
                                   >
                                     <div className="card-inset p-3 rounded-lg mt-2">
-                                      <pre className="text-xs text-foreground/80 whitespace-pre-wrap font-sans leading-relaxed">
-                                        {stage.knowledgeContent}
-                                      </pre>
+                                      <MathRenderer content={stage.knowledgeContent} className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap" />
                                     </div>
                                   </motion.div>
                                 )}
@@ -155,7 +154,7 @@ export default function ChapterPage() {
                                         AI 将为你随机出题 · {stage.topic}
                                       </div>
                                     ) : (
-                                      <div className="text-sm leading-snug">{p.question}</div>
+                                      <MathRenderer content={p.question} className="text-sm leading-snug" />
                                     )}
                                     <div className="flex flex-wrap items-center gap-2 mt-2 text-[10px] text-muted-foreground">
                                       <Gift className="w-3 h-3" />

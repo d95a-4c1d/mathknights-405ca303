@@ -6,6 +6,7 @@ import type { Problem } from '@/data/mockData';
 import { ArrowLeft, Send, Loader2, Swords, Gift } from 'lucide-react';
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 import { submitChallenge } from '@/services/api';
+import { MathRenderer } from '@/components/MathRenderer';
 
 export default function Challenge() {
   const location = useLocation();
@@ -72,7 +73,7 @@ export default function Challenge() {
           {/* Question in card-inset for better visual hierarchy */}
           <div className="card-inset p-4 md:p-5 rounded-xl mb-6">
             <div className="text-xs font-mono text-muted-foreground mb-2">题目</div>
-            <div className="text-base md:text-lg leading-relaxed font-medium">{problem.question}</div>
+            <MathRenderer content={problem.question} className="text-base md:text-lg leading-relaxed font-medium" />
           </div>
 
           <SectionHeader title="你的答案" serial="ANS//INPUT" className="mb-3" />
