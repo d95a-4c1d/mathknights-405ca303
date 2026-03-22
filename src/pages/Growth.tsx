@@ -52,7 +52,7 @@ export default function Growth() {
   const expPercent = Math.min((game.exp / expNeeded) * 100, 100);
   const canPromote = game.elite === 0 && game.level >= 50 && game.inventory.promotion_ticket >= 20;
 
-  const [targetLevel, setTargetLevel] = useState(Math.min(game.level + 1, maxLevel));
+  const [targetLevel, setTargetLevel] = useState(game.level);
   const [manualBasic, setManualBasic] = useState<number | null>(null);
   const [manualAdv, setManualAdv] = useState<number | null>(null);
 
@@ -75,7 +75,7 @@ export default function Growth() {
   return (
     <div className="relative w-screen min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col">
       {/* Watermark */}
-      <div className="watermark text-[10vw] md:text-[8vw] top-[20%] right-[5%]">GROWTH</div>
+      <div className="absolute bottom-0 right-2 text-[22vw] md:text-[16vw] font-display font-black text-white/[0.04] select-none pointer-events-none leading-none z-0">GROWTH</div>
 
       {/* Top bar */}
       <div className="sticky top-0 z-20 h-12 flex items-center px-4 md:px-6 glass-dark rounded-none" style={{ borderRadius: 0, backdropFilter: 'blur(20px)' }}>
@@ -179,7 +179,7 @@ export default function Growth() {
             {/* Target level selector */}
             <div className="flex items-center gap-3 mb-5">
               <span className="text-xs text-muted-foreground">目标等级</span>
-              <button onClick={() => setTargetLevel(Math.max(game.level + 1, targetLevel - 1))}
+              <button onClick={() => setTargetLevel(Math.max(game.level, targetLevel - 1))}
                 className="w-9 h-9 btn-ghost flex items-center justify-center active:scale-95">
                 <ChevronDown className="w-4 h-4" />
               </button>

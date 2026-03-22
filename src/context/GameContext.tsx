@@ -70,12 +70,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     try {
       const profile = await api.fetchUserProfile();
+      const inv = profile.inventory as unknown as Record<string, number>;
       setState(s => ({
         ...s,
         level: profile.level,
         exp: profile.exp,
         elite: profile.elite,
-        inventory: profile.inventory,
+        inventory: {
+          basic_exp: inv['basicExp'] ?? inv['basic_exp'] ?? 0,
+          advanced_exp: inv['advancedExp'] ?? inv['advanced_exp'] ?? 0,
+          promotion_ticket: inv['promotionTicket'] ?? inv['promotion_ticket'] ?? 0,
+        },
         easyCompleted: profile.easyCompleted || 0,
         hardCompleted: profile.hardCompleted || 0,
         loading: false,
@@ -175,11 +180,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const useExpCard = useCallback((type: 'basic_exp' | 'advanced_exp', count: number) => {
     // Call backend
     api.useExpCards(type, count).then(profile => {
+      const inv = profile.inventory as unknown as Record<string, number>;
       setState(s => ({
         ...s,
         level: profile.level,
         exp: profile.exp,
-        inventory: profile.inventory,
+        inventory: {
+          basic_exp: inv['basicExp'] ?? inv['basic_exp'] ?? 0,
+          advanced_exp: inv['advancedExp'] ?? inv['advanced_exp'] ?? 0,
+          promotion_ticket: inv['promotionTicket'] ?? inv['promotion_ticket'] ?? 0,
+        },
       }));
     }).catch(err => console.error('useExpCard failed:', err));
   }, []);
@@ -187,11 +197,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const promote = useCallback((): boolean => {
     let success = false;
     api.promote().then(profile => {
+      const inv = profile.inventory as unknown as Record<string, number>;
       setState(s => ({
         ...s,
         elite: profile.elite,
         level: profile.level,
-        inventory: profile.inventory,
+        inventory: {
+          basic_exp: inv['basicExp'] ?? inv['basic_exp'] ?? 0,
+          advanced_exp: inv['advancedExp'] ?? inv['advanced_exp'] ?? 0,
+          promotion_ticket: inv['promotionTicket'] ?? inv['promotion_ticket'] ?? 0,
+        },
       }));
       success = true;
     }).catch(err => console.error('promote failed:', err));

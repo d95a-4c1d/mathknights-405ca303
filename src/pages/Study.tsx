@@ -74,7 +74,7 @@ export default function Study() {
 
   return (
     <div className="relative w-screen min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col">
-      <div className="watermark text-[12vw] md:text-[10vw] top-[15%] left-[3%]">STUDY</div>
+      <div className="absolute bottom-0 right-2 text-[22vw] md:text-[16vw] font-display font-black text-white/[0.04] select-none pointer-events-none leading-none z-0">STUDY</div>
 
       <div className="sticky top-0 z-20 h-12 flex items-center px-4 md:px-6 glass-dark rounded-none" style={{ borderRadius: 0, backdropFilter: 'blur(20px)' }}>
         <button onClick={() => navigate('/')} className="text-white/60 hover:text-white mr-3 active:scale-95 transition-transform">

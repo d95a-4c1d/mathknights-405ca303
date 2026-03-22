@@ -10,7 +10,7 @@ export default function Settings() {
 
   return (
     <div className="relative w-screen min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col">
-      <div className="watermark text-[10vw] md:text-[8vw] top-[18%] right-[3%]">SETTINGS</div>
+      <div className="absolute bottom-0 right-2 text-[22vw] md:text-[16vw] font-display font-black text-white/[0.04] select-none pointer-events-none leading-none z-0">SETTINGS</div>
 
       <div className="sticky top-0 z-20 h-12 flex items-center px-4 md:px-6 glass-dark rounded-none" style={{ borderRadius: 0, backdropFilter: 'blur(20px)' }}>
         <button onClick={() => navigate('/')} className="text-white/60 hover:text-white mr-3 active:scale-95 transition-transform">
