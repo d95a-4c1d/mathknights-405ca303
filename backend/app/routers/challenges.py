@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.schemas import ChallengeSubmit, ChallengeResult, RewardItem, GenerateRequest
+from app.models.schemas import ChallengeSubmit, ChallengeResult, RewardItem, GenerateRequest, CompetencyDelta
 from app.models.orm_models import Problem as DBProblem, User as DBUser, UserProgress, UserMission, Stage as DBStage
 from app.services.deepseek import grade_answer, evaluate_rewards, generate_problem
 from app.routers.user import ensure_user
@@ -80,6 +80,7 @@ async def submit_challenge(body: ChallengeSubmit, db: AsyncSession = Depends(get
         )
 
     # 3. Grade with LLM
+    competency_delta: CompetencyDelta | None = None
     grade = await grade_answer(
         question=problem.question,
         student_answer=body.answer,
@@ -154,7 +155,7 @@ async def submit_challenge(body: ChallengeSubmit, db: AsyncSession = Depends(get
                     stage_result = await db.execute(select(DBStage).where(DBStage.id == problem.stage_id))
                     stage = stage_result.scalar_one_or_none()
                     if stage:
-                        _update_competencies(user, stage.topic, problem.difficulty)
+                        competency_delta = _update_competencies(user, stage.topic, problem.difficulty)
 
                     # Update mission progress
                     await _update_missions(db, body.user_id, problem.difficulty)
@@ -167,12 +168,22 @@ async def submit_challenge(body: ChallengeSubmit, db: AsyncSession = Depends(get
         correct=grade["correct"],
         rewards=rewards,
         feedback=grade["feedback"],
+        competency_delta=competency_delta,
     )
 
 
-def _update_competencies(user: DBUser, topic: str, difficulty: str):
-    """Increment relevant competency based on topic and difficulty."""
+def _update_competencies(user: DBUser, topic: str, difficulty: str) -> CompetencyDelta:
+    """Increment relevant competency based on topic and difficulty. Returns the delta."""
     gain = 1 if difficulty == "Easy" else 2
+
+    before = {
+        "comp_abstract":    user.comp_abstract,
+        "comp_logic":       user.comp_logic,
+        "comp_modeling":    user.comp_modeling,
+        "comp_imagination": user.comp_imagination,
+        "comp_computation": user.comp_computation,
+        "comp_data":        user.comp_data,
+    }
 
     topic_lower = topic.lower()
     if any(k in topic_lower for k in ["集合", "区间", "定义域", "函数性质", "奇偶", "单调"]):
@@ -194,6 +205,15 @@ def _update_competencies(user: DBUser, topic: str, difficulty: str):
         user.comp_imagination = min(100, user.comp_imagination + 1)
     else:
         user.comp_computation = min(100, user.comp_computation + 1)
+
+    return CompetencyDelta(
+        comp_abstract    = user.comp_abstract    - before["comp_abstract"],
+        comp_logic       = user.comp_logic       - before["comp_logic"],
+        comp_modeling    = user.comp_modeling    - before["comp_modeling"],
+        comp_imagination = user.comp_imagination - before["comp_imagination"],
+        comp_computation = user.comp_computation - before["comp_computation"],
+        comp_data        = user.comp_data        - before["comp_data"],
+    )
 
 
 async def _update_retry_missions(db: AsyncSession, user_id: str):

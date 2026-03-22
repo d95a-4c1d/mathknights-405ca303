@@ -68,10 +68,20 @@ export interface UserProfile {
   hardCompleted: number;
 }
 
+export interface CompetencyDelta {
+  compAbstract: number;
+  compLogic: number;
+  compModeling: number;
+  compImagination: number;
+  compComputation: number;
+  compData: number;
+}
+
 export interface ChallengeResult {
   correct: boolean;
   rewards: RewardItem[];
   feedback: string;
+  competencyDelta?: CompetencyDelta;
 }
 
 export interface WrongAnswerItem {

@@ -92,10 +92,20 @@ class ChallengeSubmit(BaseModel):
     is_retry: bool = False
 
 
+class CompetencyDelta(BaseModel):
+    comp_abstract: int = 0
+    comp_logic: int = 0
+    comp_modeling: int = 0
+    comp_imagination: int = 0
+    comp_computation: int = 0
+    comp_data: int = 0
+
+
 class ChallengeResult(BaseModel):
     correct: bool
     rewards: list[RewardItem]
     feedback: str
+    competency_delta: Optional[CompetencyDelta] = None
 
 
 class ExpCardUse(BaseModel):
