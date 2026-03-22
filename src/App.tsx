@@ -12,6 +12,7 @@ import Missions from "./pages/Missions";
 import Growth from "./pages/Growth";
 import Inventory from "./pages/Inventory";
 import Settings from "./pages/Settings";
+import WrongAnswers from "./pages/WrongAnswers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/growth" element={<Growth />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/wrong-answers" element={<WrongAnswers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

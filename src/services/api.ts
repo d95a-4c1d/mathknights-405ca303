@@ -30,6 +30,8 @@ export interface Stage {
   problems: Problem[];
   unlocked: boolean;
   cleared: boolean;
+  isTeaching?: boolean;
+  knowledgeContent?: string;
 }
 
 export interface Chapter {
@@ -62,12 +64,25 @@ export interface UserProfile {
   elite: number;
   inventory: Inventory;
   competencies: { name: string; fullName: string; value: number }[];
+  easyCompleted: number;
+  hardCompleted: number;
 }
 
 export interface ChallengeResult {
   correct: boolean;
   rewards: RewardItem[];
   feedback: string;
+}
+
+export interface WrongAnswerItem {
+  problemId: string;
+  question: string;
+  difficulty: 'Easy' | 'Hard';
+  stageName: string;
+  chapterTitle: string;
+  attempts: number;
+  bestScore: number;
+  rewards: RewardItem[];
 }
 
 // ─── Helper ──────────────────────────────────────────────────────────
@@ -123,10 +138,10 @@ export async function fetchChapter(id: string): Promise<Chapter> {
 
 // ─── Challenge endpoint ──────────────────────────────────────────────
 
-export async function submitChallenge(problemId: string, answer: string): Promise<ChallengeResult> {
+export async function submitChallenge(problemId: string, answer: string, isRetry = false): Promise<ChallengeResult> {
   const data = await request<unknown>('/challenge/', {
     method: 'POST',
-    body: JSON.stringify({ problem_id: problemId, answer, user_id: USER_ID }),
+    body: JSON.stringify({ problem_id: problemId, answer, user_id: USER_ID, is_retry: isRetry }),
   });
   return toCamel(data) as ChallengeResult;
 }
@@ -178,4 +193,27 @@ export async function ocrAnalyze(imageFile: File): Promise<Problem> {
     headers: {}, // let browser set Content-Type for FormData
   });
   return toCamel(data) as Problem;
+}
+
+// ─── Dynamic problem generation ──────────────────────────────────────
+
+export async function generateChallenge(stageId: string, difficulty: 'Easy' | 'Hard', topic: string): Promise<Problem> {
+  const data = await request<unknown>('/challenge/generate', {
+    method: 'POST',
+    body: JSON.stringify({ stage_id: stageId, difficulty, topic, user_id: USER_ID }),
+  });
+  return toCamel(data) as Problem;
+}
+
+// ─── Wrong answers endpoint ──────────────────────────────────────────
+
+export async function fetchWrongAnswers(): Promise<WrongAnswerItem[]> {
+  const data = await request<unknown[]>(`/user/wrong-answers?user_id=${USER_ID}`);
+  return toCamel(data) as WrongAnswerItem[];
+}
+
+export async function formulaPractice(): Promise<void> {
+  await request<unknown>(`/missions/formula-practice?user_id=${USER_ID}`, {
+    method: 'POST',
+  });
 }

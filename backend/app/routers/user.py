@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.schemas import UserProfile, Inventory, Competency, ExpCardUse
-from app.models.orm_models import User as DBUser
+from app.models.schemas import UserProfile, Inventory, Competency, ExpCardUse, WrongAnswerItem
+from app.models.orm_models import User as DBUser, UserProgress, Problem as DBProblem, Stage as DBStage, Chapter as DBChapter
 
 router = APIRouter()
 
@@ -58,6 +58,8 @@ def user_to_profile(user: DBUser) -> dict:
             {"name": "运算", "full_name": "数学运算", "value": user.comp_computation},
             {"name": "数据", "full_name": "数据分析", "value": user.comp_data},
         ],
+        "easy_completed": user.easy_completed or 0,
+        "hard_completed": user.hard_completed or 0,
     }
 
 
@@ -125,3 +127,65 @@ async def promote(
     await db.commit()
     await db.refresh(user)
     return user_to_profile(user)
+
+
+@router.get("/wrong-answers", response_model=list[WrongAnswerItem])
+async def get_wrong_answers(
+    user_id: str = Query("default"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return problems the user attempted but has not yet completed."""
+    await ensure_user(db, user_id)
+
+    prog_result = await db.execute(
+        select(UserProgress).where(
+            UserProgress.user_id == user_id,
+            UserProgress.attempts > 0,
+            UserProgress.completed == False,
+        )
+    )
+    wrong_progresses = prog_result.scalars().all()
+    if not wrong_progresses:
+        return []
+
+    problem_ids = [p.problem_id for p in wrong_progresses]
+    progress_by_id = {p.problem_id: p for p in wrong_progresses}
+
+    prob_result = await db.execute(
+        select(DBProblem).where(DBProblem.id.in_(problem_ids))
+    )
+    problems = {p.id: p for p in prob_result.scalars().all()}
+
+    stage_ids = list({p.stage_id for p in problems.values()})
+    stage_result = await db.execute(
+        select(DBStage).where(DBStage.id.in_(stage_ids))
+    )
+    stages = {s.id: s for s in stage_result.scalars().all()}
+
+    chapter_ids = list({s.chapter_id for s in stages.values()})
+    chapter_result = await db.execute(
+        select(DBChapter).where(DBChapter.id.in_(chapter_ids))
+    )
+    chapters = {c.id: c for c in chapter_result.scalars().all()}
+
+    items = []
+    for pid in problem_ids:
+        prob = problems.get(pid)
+        if not prob:
+            continue
+        stage = stages.get(prob.stage_id)
+        chapter = chapters.get(stage.chapter_id) if stage else None
+        prog = progress_by_id[pid]
+        items.append(WrongAnswerItem(
+            problem_id=pid,
+            question=prob.question,
+            difficulty=prob.difficulty,
+            stage_name=stage.name if stage else "未知关卡",
+            chapter_title=chapter.title if chapter else "未知章节",
+            attempts=prog.attempts or 0,
+            best_score=float(prog.best_score or 0),
+            rewards=prob.rewards or [],
+        ))
+
+    items.sort(key=lambda x: (x.chapter_title, x.stage_name))
+    return items

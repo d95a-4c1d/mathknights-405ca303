@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "autoApprove": true,
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(npm run:*)",
+      "Bash(python -c \"from app.routers import chapters, challenges, user; print\\(''imports OK''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

@@ -76,6 +76,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         exp: profile.exp,
         elite: profile.elite,
         inventory: profile.inventory,
+        easyCompleted: profile.easyCompleted || 0,
+        hardCompleted: profile.hardCompleted || 0,
         loading: false,
       }));
       setCompetencies(profile.competencies.map(c => ({

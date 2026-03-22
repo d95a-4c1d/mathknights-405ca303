@@ -35,6 +35,8 @@ class Stage(BaseModel):
     problems: list[Problem]
     unlocked: bool
     cleared: bool
+    is_teaching: bool = False
+    knowledge_content: Optional[str] = None
 
 
 class Chapter(BaseModel):
@@ -77,6 +79,8 @@ class UserProfile(BaseModel):
     elite: int
     inventory: Inventory
     competencies: list[Competency]
+    easy_completed: int = 0
+    hard_completed: int = 0
 
 
 # ─── Request / Response ───────────────────────────────────────────────
@@ -85,6 +89,7 @@ class ChallengeSubmit(BaseModel):
     problem_id: str
     answer: str
     user_id: Optional[str] = "default"
+    is_retry: bool = False
 
 
 class ChallengeResult(BaseModel):
@@ -96,3 +101,21 @@ class ChallengeResult(BaseModel):
 class ExpCardUse(BaseModel):
     type: str  # 'basic_exp' | 'advanced_exp'
     count: int
+
+
+class GenerateRequest(BaseModel):
+    stage_id: str
+    difficulty: str  # 'Easy' | 'Hard'
+    topic: str
+    user_id: Optional[str] = "default"
+
+
+class WrongAnswerItem(BaseModel):
+    problem_id: str
+    question: str
+    difficulty: str
+    stage_name: str
+    chapter_title: str
+    attempts: int
+    best_score: float
+    rewards: list[RewardItem]

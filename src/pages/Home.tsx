@@ -3,12 +3,13 @@ import { expToNextLevel } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
-import { BookOpen, Target, TrendingUp, Package, Settings, ChevronRight, Award, Star, Shield } from 'lucide-react';
+import { BookOpen, Target, TrendingUp, Package, Settings, ChevronRight, Award, Star, Shield, BookX } from 'lucide-react';
 import { Barcode, SerialTag, SectionHeader } from '@/components/Decorative';
 
 const menuItems = [
   { label: '学习', sub: '开始学习之旅', path: '/study', icon: BookOpen, accent: true },
   { label: '任务', sub: '每日与每周任务', path: '/missions', icon: Target },
+  { label: '错题本', sub: '复习未通过的题目', path: '/wrong-answers', icon: BookX },
   { label: '成长', sub: '升级强化', path: '/growth', icon: TrendingUp },
   { label: '仓库', sub: '物品与素材', path: '/inventory', icon: Package },
   { label: '设置', sub: '系统配置', path: '/settings', icon: Settings },

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useGame } from '@/context/GameContext';
 import { motion } from 'framer-motion';
 import type { Problem } from '@/data/mockData';
-import { ArrowLeft, Upload, Send, Loader2, Swords, Gift, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Swords, Gift } from 'lucide-react';
 import { SectionHeader, SerialTag } from '@/components/Decorative';
 import { submitChallenge } from '@/services/api';
 
@@ -11,10 +11,9 @@ export default function Challenge() {
   const location = useLocation();
   const navigate = useNavigate();
   const game = useGame();
-  const { problem, stageName, isCustom } = (location.state || {}) as { problem: Problem; stageName: string; isCustom?: boolean };
+  const { problem, stageName, isCustom, isRetry } = (location.state || {}) as { problem: Problem; stageName: string; isCustom?: boolean; isRetry?: boolean };
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   if (!problem) { navigate('/study'); return null; }
 
@@ -22,32 +21,20 @@ export default function Challenge() {
     if (!answer.trim()) return;
     setSubmitting(true);
     try {
-      const result = await submitChallenge(problem.id, answer);
+      const result = await submitChallenge(problem.id, answer, !!isRetry);
       if (result.correct) {
         const rewards = game.completeChallenge(problem);
+        // Refresh backend state so chapter unlock propagates
+        game.refreshChapters();
+        game.refreshProfile();
         navigate('/result', { state: { problem, stageName, rewards, isCustom, feedback: result.feedback } });
       } else {
-        // Show feedback but don't navigate to result for wrong answers
         navigate('/result', { state: { problem, stageName, rewards: [], isCustom, feedback: result.feedback, failed: true } });
       }
     } catch (err) {
       console.error('Submit failed:', err);
-      // Fallback: complete locally
-      const rewards = game.completeChallenge(problem);
-      navigate('/result', { state: { problem, stageName, rewards, isCustom, feedback: '网络错误，已本地记录' } });
+      navigate('/result', { state: { problem, stageName, rewards: [], isCustom, feedback: '网络错误，请检查后端服务是否运行', failed: true } });
     }
-  };
-
-  const handleFileUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = () => {
-      if (input.files?.[0]) {
-        setUploadedFile(input.files[0]);
-      }
-    };
-    input.click();
   };
 
   return (
@@ -96,21 +83,7 @@ export default function Challenge() {
             disabled={submitting}
           />
 
-          {/* Uploaded file indicator */}
-          {uploadedFile && (
-            <div className="flex items-center gap-2 mt-2 card-inset p-2 rounded-lg">
-              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs text-muted-foreground">{uploadedFile.name}</span>
-            </div>
-          )}
-
           <div className="flex items-center gap-3 mt-4">
-            <button
-              onClick={handleFileUpload}
-              className="px-4 py-2.5 btn-ghost text-xs font-medium tracking-wider flex items-center gap-2"
-            >
-              <Upload className="w-3.5 h-3.5" /> 图片
-            </button>
             <button
               onClick={handleSubmit}
               disabled={!answer.trim() || submitting}

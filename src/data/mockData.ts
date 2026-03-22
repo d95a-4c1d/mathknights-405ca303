@@ -5,6 +5,8 @@ export interface Stage {
   problems: Problem[];
   unlocked: boolean;
   cleared: boolean;
+  isTeaching?: boolean;
+  knowledgeContent?: string;
 }
 
 export interface Problem {
@@ -45,33 +47,25 @@ export const CHAPTERS: Chapter[] = [
   {
     id: 'ch1', number: 1, title: '函数与极限', subtitle: '微积分基础', available: true,
     stages: [
-      {
-        id: 's1-1', name: '区间与集合', topic: '集合论基础', unlocked: true, cleared: false,
-        problems: [
-          { id: 'p1-1-e', difficulty: 'Easy', question: '用区间表示法求解 |2x-3| < 5。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
-          { id: 'p1-1-h', difficulty: 'Hard', question: '已知 A=(-∞,2], B=[-1,4)，求 A∩B 和 A∪B。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
-        ],
-      },
-      {
-        id: 's1-2', name: '定义域与值域', topic: '函数定义域', unlocked: false, cleared: false,
-        problems: [
-          { id: 'p1-2-e', difficulty: 'Easy', question: '求 y=√(4-x²)+ln(x-1) 的自然定义域。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
-          { id: 'p1-2-h', difficulty: 'Hard', question: '已知 f(x)=arcsin x, g(x)=√x，求 f(g(x)) 的定义域。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
-        ],
-      },
-      {
-        id: 's1-3', name: '函数的四大性质', topic: '函数性质', unlocked: false, cleared: false,
-        problems: [
-          { id: 'p1-3-e', difficulty: 'Easy', question: '判断 f(x)=ln(x+√(1+x²)) 的奇偶性。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
-          { id: 'p1-3-h', difficulty: 'Hard', question: '判断 f(x)=x/(1+x²) 在其定义域上是否有界，并描述其在 (0,+∞) 上的单调性。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
-        ],
-      },
+      { id: 's1-1', name: '集合与区间', topic: '集合论基础', unlocked: true, cleared: false, isTeaching: true, problems: [
+        { id: 'p1-1-e', difficulty: 'Easy', question: '用区间表示法求解 |2x-3| < 5。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
+        { id: 'p1-1-h', difficulty: 'Hard', question: '已知 A=(-∞,2], B=[-1,4)，求 A∩B 和 A∪B。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
+      ]},
+      { id: 's1-2', name: '定义域与值域', topic: '函数定义域', unlocked: false, cleared: false, problems: [
+        { id: 'p1-2-e', difficulty: 'Easy', question: '求 y=√(4-x²)+ln(x-1) 的自然定义域。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
+        { id: 'p1-2-h', difficulty: 'Hard', question: '已知 f(x)=arcsin x, g(x)=√x，求 f(g(x)) 的定义域。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
+      ]},
+      { id: 's1-3', name: '函数的四大性质', topic: '函数性质', unlocked: false, cleared: false, problems: [
+        { id: 'p1-3-e', difficulty: 'Easy', question: '判断 f(x)=ln(x+√(1+x²)) 的奇偶性。', rewards: [{ type: 'basic_exp', name: '基础经验卡', quantity: 1 }] },
+        { id: 'p1-3-h', difficulty: 'Hard', question: '判断 f(x)=x/(1+x²) 在其定义域上是否有界，并描述其在 (0,+∞) 上的单调性。', rewards: [{ type: 'advanced_exp', name: '高级经验卡', quantity: 1 }], firstClearBonus: [{ type: 'promotion_ticket', name: '晋升凭证', quantity: 1 }] },
+      ]},
     ],
   },
   { id: 'ch2', number: 2, title: '导数与微分', subtitle: '变化率', available: false, stages: [] },
   { id: 'ch3', number: 3, title: '导数的应用', subtitle: '优化与分析', available: false, stages: [] },
   { id: 'ch4', number: 4, title: '不定积分', subtitle: '原函数', available: false, stages: [] },
   { id: 'ch5', number: 5, title: '定积分', subtitle: '曲线下面积', available: false, stages: [] },
+  { id: 'ch6', number: 6, title: '微分方程', subtitle: '变化律建模', available: false, stages: [] },
 ];
 
 export const DAILY_MISSIONS: Mission[] = [

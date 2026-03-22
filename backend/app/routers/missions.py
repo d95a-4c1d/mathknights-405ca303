@@ -152,3 +152,23 @@ async def claim_mission(
 
     await db.commit()
     return rewards
+
+
+@router.post("/formula-practice")
+async def formula_practice(
+    user_id: str = Query("default"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Increment formula memorization mission progress by 1."""
+    result = await db.execute(
+        select(UserMission).where(
+            UserMission.user_id == user_id,
+            UserMission.claimed == False,
+        )
+    )
+    missions = result.scalars().all()
+    for m in missions:
+        if "公式" in m.description:
+            m.current = min(m.current + 1, m.target)
+    await db.commit()
+    return {"status": "ok"}
