@@ -14,6 +14,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file_
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+DEEPSEEK_VISION_MODEL = os.getenv("DEEPSEEK_VISION_MODEL", DEEPSEEK_MODEL)
 
 _client: AsyncOpenAI | None = None
 
@@ -197,7 +198,7 @@ async def parse_image_to_problem(image_base64: str) -> dict:
     try:
         client = get_client()
         resp = await client.chat.completions.create(
-            model=DEEPSEEK_MODEL,
+            model=DEEPSEEK_VISION_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {
